@@ -1,0 +1,12 @@
+[versions]
+agp = "9.2.1"
+appcompat = "1.7.1"
+recyclerview = "1.4.0"
+
+[libraries]
+appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+

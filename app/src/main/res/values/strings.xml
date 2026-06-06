@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Samik</string>
+    <string name="header">SAMIK</string>
+    <string name="scan">🔍 СКАНИРОВАТЬ</string>
+    <string name="choose_msg">Выберите самокат для подключения</string>
+    <string name="waiting">● Ожидание</string>
+    <string name="found_devices">НАЙДЕННЫЕ УСТРОЙСТВА</string>
+    <string name="empty_devices_list_msg">Нажмите кнопку для поиска самокатов</string>
+</resources>
