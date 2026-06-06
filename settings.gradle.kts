@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SamikTest"
+rootProject.name = "SamikApp"
 include(":app")

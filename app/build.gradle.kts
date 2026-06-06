@@ -2,8 +2,13 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+}
+
 android {
     namespace = "com.v7878.samik"
+
     compileSdk {
         version = release(37)
     }
@@ -12,8 +17,12 @@ android {
         applicationId = "com.v7878.samik"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 100_000_000
+        versionName = "1.0.0"
+    }
+
+    buildFeatures {
+        viewBinding = true
     }
 
     buildTypes {
@@ -24,13 +33,6 @@ android {
                 "proguard-rules.pro"
             )
         }
-    }
-    buildFeatures {
-        viewBinding = true
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
     }
 }
 
