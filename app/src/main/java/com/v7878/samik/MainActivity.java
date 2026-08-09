@@ -278,12 +278,8 @@ public class MainActivity extends AppCompatActivity {
 
         // TODO
         //noinspection ConstantValue
-        if (false) {
-            class Holder {
-                static final BatteryPercentageCalculator BPC =
-                        new BatteryPercentageCalculator();
-            }
-            var bp = Holder.BPC.calculate(t.voltage, t.current);
+        if (true) {
+            var bp = BatteryPercentageCalculator.calculate(t.voltage);
             if (bp >= 0) {
                 tvBatteryPercent.setText(bp + "%");
                 int color = bp > 50 ? 0xFF81C784 :

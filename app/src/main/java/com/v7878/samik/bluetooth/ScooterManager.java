@@ -26,8 +26,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ScooterManager implements DeviceCallback {
     public static final String TAG = "ScooterBLE";
 
-    private static final int HEARTBEAT_INTERVAL_MS = 3000;
-
     public static class Commands {
         public static final byte HEARTBEAT = (byte) 0x01;
         public static final byte PARKING_MODE = (byte) 0x33;
@@ -147,15 +145,6 @@ public class ScooterManager implements DeviceCallback {
     }
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private final Runnable heartbeatRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (!connected.get()) return;
-
-            manager.queueCommand(HEARTBEAT);
-            mainHandler.postDelayed(heartbeatRunnable, HEARTBEAT_INTERVAL_MS);
-        }
-    };
 
     private BLEDeviceManager manager;
     private final ScooterCallback callback;
@@ -181,7 +170,8 @@ public class ScooterManager implements DeviceCallback {
     public void onConnected() {
         connected.set(true);
         callback.onConnected();
-        mainHandler.post(heartbeatRunnable);
+
+        manager.queueCommand(HEARTBEAT);
 
         // Опрос текущего состояния
         manager.queueCommand(MAX_SPEED, (byte) 0x00);
@@ -343,19 +333,21 @@ public class ScooterManager implements DeviceCallback {
             case MAX_TORQUE -> parseMaxTorque(data);
             case BRAKE_STRENGTH -> parseBrakeStrength(data);
         }
-
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("cmd: %02X data: ", cmd & 0xFF));
-        for (byte b : data) sb.append(String.format("%02X ", b & 0xFF));
-        sb.append(String.format("status: %02X", status & 0xFF));
-        Log.i(TAG, sb.toString());
     }
 
     @Override
     public void onRawNotify(byte[] raw) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("raw in data: ");
+        for (byte b : raw) sb.append(String.format("%02X ", b & 0xFF));
+        Log.i(TAG, sb.toString());
     }
 
     @Override
     public void onRawWrite(byte[] raw, boolean success) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("raw out data: ");
+        for (byte b : raw) sb.append(String.format("%02X ", b & 0xFF));
+        Log.i(TAG, sb.toString());
     }
 }

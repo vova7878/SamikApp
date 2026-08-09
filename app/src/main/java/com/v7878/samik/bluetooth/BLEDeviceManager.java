@@ -273,12 +273,13 @@ public class BLEDeviceManager {
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt g, BluetoothGattCharacteristic ch, int status) {
+            var written = ch.getValue();
+
             PacketTask task = currentPacket.getAndSet(null);
             assert task != null;
 
             var success = status == BluetoothGatt.GATT_SUCCESS;
 
-            var written = ch.getValue();
             written = written != null ? written.clone() : new byte[0];
             callback.onRawWrite(written, success);
 

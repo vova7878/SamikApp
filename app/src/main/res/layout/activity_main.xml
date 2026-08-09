@@ -61,6 +61,17 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
+        <!-- ================= FIRMWARE ================= -->
+        <TextView
+            android:id="@+id/tvFirmware"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="monospace"
+            android:text="Прошивка: —"
+            android:textColor="#6B7A90"
+            android:textSize="12sp" />
+
         <!-- ================= SPEED + BATTERY ================= -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -836,16 +847,5 @@
                 android:textColor="#FFFFFF"
                 android:textSize="13sp" />
         </LinearLayout>
-
-        <!-- ================= FIRMWARE ================= -->
-        <TextView
-            android:id="@+id/tvFirmware"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:fontFamily="monospace"
-            android:text="Прошивка: —"
-            android:textColor="#6B7A90"
-            android:textSize="12sp" />
     </LinearLayout>
 </ScrollView>
