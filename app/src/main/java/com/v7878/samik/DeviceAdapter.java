@@ -13,7 +13,6 @@ import java.util.List;
 
 @SuppressLint("SetTextI18n")
 public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
-
     public interface OnDeviceClickListener {
         void onDeviceClick(DeviceListActivity.DeviceItem device);
     }

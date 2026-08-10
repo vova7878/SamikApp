@@ -847,5 +847,16 @@
                 android:textColor="#FFFFFF"
                 android:textSize="13sp" />
         </LinearLayout>
+
+        <!-- ================= RX ================= -->
+        <TextView
+            android:id="@+id/tvRX"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="monospace"
+            android:text=""
+            android:textColor="#6B7A90"
+            android:textSize="12sp" />
     </LinearLayout>
 </ScrollView>

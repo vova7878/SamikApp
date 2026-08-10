@@ -17,7 +17,9 @@ import static com.v7878.samik.bluetooth.ScooterManager.Commands.UNITS;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.util.SparseArray;
 
+import com.v7878.samik.Utils;
 import com.v7878.samik.bluetooth.BLEDeviceManager.DeviceCallback;
 
 import java.util.Objects;
@@ -91,6 +93,7 @@ public class ScooterManager implements DeviceCallback {
     }
 
     public static class ScooterTelemetry {
+        public final SparseArray<byte[]> rx = new SparseArray<>();
         // 0x10
         public float voltage, current, speed;
         public int batteryPercent, controllerTemp, motorTemp, batteryTemp, motorRpm;
@@ -320,6 +323,7 @@ public class ScooterManager implements DeviceCallback {
 
     @Override
     public void onNotify(int cmd, byte[] data, int status, boolean isValid) {
+        telemetry.rx.put(cmd, data);
         switch (cmd) {
             case 0x10 -> parse0x10_Telemetry(data);
             case 0x11 -> parse0x11_State(data);
@@ -337,17 +341,11 @@ public class ScooterManager implements DeviceCallback {
 
     @Override
     public void onRawNotify(byte[] raw) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("raw in data: ");
-        for (byte b : raw) sb.append(String.format("%02X ", b & 0xFF));
-        Log.i(TAG, sb.toString());
+        Log.i(TAG, "raw in data: " + Utils.hex(raw));
     }
 
     @Override
     public void onRawWrite(byte[] raw, boolean success) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("raw out data: ");
-        for (byte b : raw) sb.append(String.format("%02X ", b & 0xFF));
-        Log.i(TAG, sb.toString());
+        Log.i(TAG, "raw out data: " + Utils.hex(raw));
     }
 }

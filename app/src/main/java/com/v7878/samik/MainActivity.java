@@ -22,6 +22,8 @@ import com.v7878.samik.bluetooth.ScooterManager;
 import com.v7878.samik.bluetooth.ScooterManager.ScooterCallback;
 import com.v7878.samik.bluetooth.ScooterManager.ScooterTelemetry;
 
+import java.util.StringJoiner;
+
 @SuppressLint({"DefaultLocale", "SetTextI18n"})
 public class MainActivity extends AppCompatActivity {
     private BLEDeviceManager manager;
@@ -62,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvFirmware;
     private View cardErrors;
     private TextView tvErrors;
+    private TextView tvRX;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -144,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
         tvFirmware = findViewById(R.id.tvFirmware);
         cardErrors = findViewById(R.id.cardErrors);
         tvErrors = findViewById(R.id.tvErrors);
+        tvRX = findViewById(R.id.tvRX);
     }
 
     private void setupListeners() {
@@ -395,6 +399,15 @@ public class MainActivity extends AppCompatActivity {
             cardErrors.setVisibility(View.VISIBLE);
         } else {
             cardErrors.setVisibility(View.GONE);
+        }
+
+        {
+            var j = new StringJoiner("\n");
+            var rx = t.rx;
+            for (int i = 0; i < rx.size(); i++) {
+                j.add(String.format("%02X: %s", rx.keyAt(i), Utils.hex(rx.valueAt(i))));
+            }
+            tvRX.setText(j.toString());
         }
     }
 
