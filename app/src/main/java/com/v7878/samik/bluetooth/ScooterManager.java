@@ -123,6 +123,14 @@ public class ScooterManager implements DeviceCallback {
         public int throttleValue, brakeVal1, brakeVal2;
         public int throttleVal_CY, brakeVal1_CY, brakeVal2_CY;
 
+        // 0x16
+        public int batteryCutoffVoltage;
+        public int batteryLevel1Voltage;
+        public int batteryLevel2Voltage;
+        public int batteryLevel3Voltage;
+        public int batteryLevel4Voltage;
+        public int batteryLevel5Voltage;
+
         // 0x3c - 0x3f
         public int maxSpeed, maxSpeedLimit;
         public int startTorque, startTorqueLimit;
@@ -285,6 +293,19 @@ public class ScooterManager implements DeviceCallback {
         callback.onTelemetryUpdate(telemetry);
     }
 
+    private void parse0x16_BatterySettings(byte[] d) {
+        if (d.length < 6) return;
+
+        telemetry.batteryCutoffVoltage = d[0] & 0xFF;
+        telemetry.batteryLevel1Voltage = d[1] & 0xFF;
+        telemetry.batteryLevel2Voltage = d[2] & 0xFF;
+        telemetry.batteryLevel3Voltage = d[3] & 0xFF;
+        telemetry.batteryLevel4Voltage = d[4] & 0xFF;
+        telemetry.batteryLevel5Voltage = d[5] & 0xFF;
+
+        callback.onTelemetryUpdate(telemetry);
+    }
+
     private void parseMaxSpeed(byte[] d) {
         if (d.length < 2) return;
 
@@ -331,7 +352,7 @@ public class ScooterManager implements DeviceCallback {
             case 0x13 -> parse0x13_Sensors(data);
             // TODO?
             case 0x14 -> { /* Ignore */ }
-            case 0x16 -> { /* Ignore */ }
+            case 0x16 -> parse0x16_BatterySettings(data);
             case MAX_SPEED -> parseMaxSpeed(data);
             case STARTING_TORQUE -> parseStartingTorque(data);
             case MAX_TORQUE -> parseMaxTorque(data);
