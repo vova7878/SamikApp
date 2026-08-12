@@ -3,7 +3,6 @@ package com.v7878.samik.bluetooth;
 import static com.v7878.samik.bluetooth.ScooterManager.Commands.BINDING;
 import static com.v7878.samik.bluetooth.ScooterManager.Commands.BRAKE_STRENGTH;
 import static com.v7878.samik.bluetooth.ScooterManager.Commands.CRUISE_CONTROL;
-import static com.v7878.samik.bluetooth.ScooterManager.Commands.HEARTBEAT;
 import static com.v7878.samik.bluetooth.ScooterManager.Commands.HORN;
 import static com.v7878.samik.bluetooth.ScooterManager.Commands.LIGHT;
 import static com.v7878.samik.bluetooth.ScooterManager.Commands.MAX_SPEED;
@@ -12,6 +11,7 @@ import static com.v7878.samik.bluetooth.ScooterManager.Commands.MODE_SWITCH;
 import static com.v7878.samik.bluetooth.ScooterManager.Commands.PARKING_MODE;
 import static com.v7878.samik.bluetooth.ScooterManager.Commands.STARTING_MODE;
 import static com.v7878.samik.bluetooth.ScooterManager.Commands.STARTING_TORQUE;
+import static com.v7878.samik.bluetooth.ScooterManager.Commands.START_TELEMETRY;
 import static com.v7878.samik.bluetooth.ScooterManager.Commands.UNITS;
 
 import android.os.Handler;
@@ -29,7 +29,7 @@ public class ScooterManager implements DeviceCallback {
     public static final String TAG = "ScooterBLE";
 
     public static class Commands {
-        public static final byte HEARTBEAT = (byte) 0x01;
+        public static final byte START_TELEMETRY = (byte) 0x01;
         public static final byte PARKING_MODE = (byte) 0x33;
         public static final byte HORN = (byte) 0x34;
         public static final byte STARTING_MODE = (byte) 0x35;
@@ -182,8 +182,13 @@ public class ScooterManager implements DeviceCallback {
         connected.set(true);
         callback.onConnected();
 
-        manager.queueCommand(HEARTBEAT);
+        // Запрос телеметрии, если она не отправляется автоматически
+        manager.queueRawCommand((byte) 0x5A, START_TELEMETRY);
+        manager.queueRawCommand((byte) 0xFA, START_TELEMETRY);
+    }
 
+    @Override
+    public void onFirstPacketReceived() {
         // Опрос текущего состояния
         manager.queueCommand(MAX_SPEED, (byte) 0x00);
         manager.queueCommand(STARTING_TORQUE, (byte) 0x00);
@@ -216,10 +221,6 @@ public class ScooterManager implements DeviceCallback {
         if (d.length < 10) return;
 
         int flags1 = d[0] & 0xFF;
-        int flags2 = d[1] & 0xFF;
-        int flags3 = d[8] & 0xFF;
-        int flags4 = d[9] & 0xFF;
-
         telemetry.gear = flags1 & 0x07;
         telemetry.lights = (flags1 & 0x08) != 0;
         telemetry.taillight = (flags1 & 0x10) != 0;
@@ -227,6 +228,7 @@ public class ScooterManager implements DeviceCallback {
         telemetry.cruiseControl = (flags1 & 0x40) != 0;
         telemetry.speedUnitMph = (flags1 & 0x80) != 0;
 
+        int flags2 = d[1] & 0xFF;
         telemetry.switchControl = (flags2 & 0x01) != 0;
         telemetry.locked = (flags2 & 0x02) != 0;
         telemetry.horn = (flags2 & 0x04) != 0;
@@ -239,6 +241,7 @@ public class ScooterManager implements DeviceCallback {
         telemetry.totalMileage = ((d[4] & 0xFF) << 8) | (d[5] & 0xFF);
         telemetry.ambientLightValue = ((d[6] & 0xFF) << 8) | (d[7] & 0xFF);
 
+        int flags3 = d[8] & 0xFF;
         telemetry.cruisingCondition = (flags3 & 0x01) != 0;
         telemetry.brakingState = (flags3 & 0x02) != 0;
         telemetry.lockCondition = (flags3 & 0x04) != 0;
@@ -248,6 +251,7 @@ public class ScooterManager implements DeviceCallback {
         telemetry.motorPhaseFault = (flags3 & 0x40) != 0;
         telemetry.chargingState = (flags3 & 0x80) != 0;
 
+        int flags4 = d[9] & 0xFF;
         telemetry.lockedRotorFault = (flags4 & 0x01) != 0;
         telemetry.hardwareOvercurrent = (flags4 & 0x02) != 0;
         telemetry.controllerFailure = (flags4 & 0x04) != 0;

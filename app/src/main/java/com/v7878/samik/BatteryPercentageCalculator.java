@@ -3,10 +3,11 @@ package com.v7878.samik;
 public class BatteryPercentageCalculator {
     // Калибровочная таблица для 10S Li-ion (3.0V–4.2V на ячейку)
     private static final float[] VOLTAGE_TABLE = {
-            30.0f, 33.0f, 34.0f, 35.0f, 36.0f, 37.0f, 38.0f, 39.0f, 40.0f, 41.0f, 42.0f
+            30.0f, 33.0f, 34.0f, 35.0f, 36.0f, 36.5f, 37.0f, 37.5f,
+            38.0f, 38.5f, 39.0f, 40.0f, 40.5f, 41.0f, 41.5f, 42.0f
     };
     private static final int[] PERCENT_TABLE = {
-            0, 5, 10, 18, 30, 45, 60, 75, 88, 95, 100
+            0, 1, 3, 5, 10, 15, 20, 30, 40, 50, 60, 75, 85, 90, 95, 100
     };
 
     public static int calculate(float voltage) {

@@ -20,6 +20,7 @@ import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 @SuppressLint("MissingPermission")
@@ -36,10 +37,12 @@ public class BLEDeviceManager {
 
     private static class PacketTask {
         private WriteCallback callback;
+        final byte zt;
         final byte cmd;
         final byte[] data;
 
-        PacketTask(byte cmd, byte[] data, WriteCallback callback) {
+        PacketTask(byte zt, byte cmd, byte[] data, WriteCallback callback) {
+            this.zt = zt;
             this.cmd = cmd;
             this.data = data;
             this.callback = callback;
@@ -60,6 +63,8 @@ public class BLEDeviceManager {
 
         void onConnected();
 
+        void onFirstPacketReceived();
+
         void onDisconnected();
 
         void onNotify(int cmd, byte[] data, int status, boolean isValid);
@@ -76,6 +81,7 @@ public class BLEDeviceManager {
     private BluetoothGatt gatt;
     private BluetoothGattCharacteristic io;
 
+    private final AtomicInteger ZT = new AtomicInteger(-1);
     private final AtomicBoolean isConnected = new AtomicBoolean(false);
     private final AtomicBoolean isWriting = new AtomicBoolean(false);
     private final AtomicReference<PacketTask> currentPacket = new AtomicReference<>(null);
@@ -90,6 +96,7 @@ public class BLEDeviceManager {
     }
 
     private void resetState() {
+        ZT.set(-1);
         isConnected.set(false);
         isWriting.set(false);
         currentPacket.set(null);
@@ -132,17 +139,28 @@ public class BLEDeviceManager {
         }
     }
 
-    public void queueCommand(byte cmd, byte... data) {
-        queueCommand(cmd, data, success -> {
-            Log.i(TAG, String.format("Writed: %02X ", cmd & 0xFF) + success);
-        });
-    }
-
-    public void queueCommand(byte cmd, byte[] data, WriteCallback callback) {
-        if (!commandQueue.offer(new PacketTask(cmd, data, callback))) {
+    public void queueRawCommand(byte zt, byte cmd, byte[] data, WriteCallback callback) {
+        if (!commandQueue.offer(new PacketTask(zt, cmd, data, callback))) {
             throw new AssertionError();
         }
         if (!isWriting.get()) processNextCommand();
+    }
+
+    public void queueRawCommand(byte zt, byte cmd, byte... data) {
+        queueRawCommand(zt, cmd, data, null);
+    }
+
+    public void queueCommand(byte cmd, byte[] data, WriteCallback callback) {
+        int zt = ZT.get();
+        if (zt == -1) {
+            Log.w(TAG, "Not initialized writing");
+            return;
+        }
+        queueRawCommand((byte) zt, cmd, data, callback);
+    }
+
+    public void queueCommand(byte cmd, byte... data) {
+        queueCommand(cmd, data, null);
     }
 
     private void processNextCommand() {
@@ -159,7 +177,7 @@ public class BLEDeviceManager {
         isWriting.set(true);
         currentPacket.set(task);
 
-        byte[] packet = buildOutgoingPacket(task.cmd, task.data);
+        byte[] packet = buildOutgoingPacket(task.zt, task.cmd, task.data);
 
         io.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
         io.setValue(packet);
@@ -170,8 +188,8 @@ public class BLEDeviceManager {
         }
     }
 
-    // [FA AF A5 5A] [CMD] [LEN] [DATA...] [CHECKSUM]
-    private byte[] buildOutgoingPacket(byte cmd, byte[] data) {
+    // [FA AF A5] [ZT] [CMD] [LEN] [DATA...] [CHECKSUM]
+    private byte[] buildOutgoingPacket(byte zt, byte cmd, byte[] data) {
         int dataLen = (data != null) ? data.length : 0;
         if (dataLen > (255 - 7)) {
             throw new IllegalArgumentException("Too much data: " + dataLen);
@@ -180,29 +198,36 @@ public class BLEDeviceManager {
         packet[0] = (byte) 0xFA;
         packet[1] = (byte) 0xAF;
         packet[2] = (byte) 0xA5;
-        packet[3] = (byte) 0x5A;
+        packet[3] = zt;
         packet[4] = cmd;
         packet[5] = (byte) dataLen;
         if (data != null) System.arraycopy(data, 0, packet, 6, dataLen);
 
-        int checksum = 0x5A + (cmd & 0xFF) + (dataLen & 0xFF);
+        int checksum = (zt & 0xFF) + (cmd & 0xFF) + (dataLen & 0xFF);
         for (int i = 0; i < dataLen; i++) checksum += (data[i] & 0xFF);
         packet[packet.length - 1] = (byte) checksum;
 
         return packet;
     }
 
-    // [5A] [CMD] [LEN] [DATA...] [CHECKSUM] [STATUS]
+    // [ZT] [CMD] [LEN] [DATA...] [CHECKSUM] [STATUS]
     private void parseIncomingPacket(byte[] raw) {
-        if (raw.length < 5 || (raw[0] & 0xFF) != 0x5A) return;
+        if (raw.length >= 1) {
+            var zt = ZT.getAndSet(raw[0] & 0xff);
+            if (zt == -1) {
+                callback.onFirstPacketReceived();
+            }
+        }
+        if (raw.length < 5) return;
 
         int cmd = raw[1] & 0xFF;
         int len = raw[2] & 0xFF;
         int expectedTotal = 3 + len + 2;
         if (raw.length < expectedTotal) return;
 
-        int calc = 0x5A + cmd + len;
-        for (int i = 0; i < len; i++) calc += (raw[3 + i] & 0xFF);
+        int calc = 0;
+        for (int i = 2; i < raw.length; i++)
+            calc += (raw[i - 2] & 0xFF);
         calc &= 0xFF;
         int recvChecksum = raw[3 + len] & 0xFF;
         int status = raw[3 + len + 1] & 0xFF;

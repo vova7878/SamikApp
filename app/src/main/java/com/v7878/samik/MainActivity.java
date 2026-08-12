@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvSingleMileage, tvTotalMileage;
 
     // Views — флаги
-    private TextView tvFlagLights, tvFlagLock, tvFlagStart, tvFlagCruise, tvFlagUnits, tvFlagBound;
+    private TextView tvFlagUnits, tvFlagBound;
 
     // Views — управление
     private Button btnDisconnect;
@@ -116,10 +116,6 @@ public class MainActivity extends AppCompatActivity {
         tvSingleMileage = findViewById(R.id.tvSingleMileage);
         tvTotalMileage = findViewById(R.id.tvTotalMileage);
 
-        tvFlagLights = findViewById(R.id.tvFlagLights);
-        tvFlagLock = findViewById(R.id.tvFlagLock);
-        tvFlagStart = findViewById(R.id.tvFlagStart);
-        tvFlagCruise = findViewById(R.id.tvFlagCruise);
         tvFlagUnits = findViewById(R.id.tvFlagUnits);
         tvFlagBound = findViewById(R.id.tvFlagBound);
 
@@ -278,7 +274,6 @@ public class MainActivity extends AppCompatActivity {
         float speedDisplay = mphMode ? t.speed * 0.621371f : t.speed;
         tvSpeed.setText(String.format("%.1f", speedDisplay));
         tvSpeedUnit.setText(mphMode ? " mph" : " km/h");
-        tvFlagUnits.setText(mphMode ? "📏 mph" : "📏 km/h");
 
         // TODO
         //noinspection ConstantValue
@@ -302,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
         if (t.voltage > 0) {
             tvVoltage.setText(String.format("%.2f V", t.voltage));
         }
-        tvCurrent.setText(String.format("%.2f A", t.current));
+        tvCurrent.setText(String.format("%.3f A", t.current));
 
         var gearName = switch (t.gear) {
             case 1 -> "ECO";
@@ -333,12 +328,7 @@ public class MainActivity extends AppCompatActivity {
             tvTotalMileage.setText(t.totalMileage + " km");
         }
 
-        tvFlagLights.setText("💡 Свет: " + (t.lights ? "ВКЛ" : "ВЫКЛ"));
-        tvFlagLights.setTextColor(t.lights ? 0xFFFFD54F : 0xFFFFFFFF);
-        tvFlagLock.setText("🔒 Парковка: " + (t.locked ? "ВКЛ" : "ВЫКЛ"));
-        tvFlagLock.setTextColor(t.locked ? 0xFFE57373 : 0xFFFFFFFF);
-        tvFlagStart.setText("🎯 Кик-старт: " + (t.startingMode ? "ВКЛ" : "ВЫКЛ"));
-        tvFlagCruise.setText("⛵ Круиз: " + (t.cruiseControl ? "ВКЛ" : "ВЫКЛ"));
+        tvFlagUnits.setText(mphMode ? "📏 mph" : "📏 km/h");
         tvFlagBound.setText("📡 Привязан: " + (t.bluetoothBound ? "ДА" : "НЕТ"));
 
         if (t.lights != lightsOn) {
@@ -383,19 +373,21 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (t.hasErrors()) {
-            StringBuilder err = new StringBuilder();
-            if (t.lockedRotorFault) err.append("• Блокировка ротора\n");
-            if (t.hardwareOvercurrent) err.append("• Перегрузка по току\n");
-            if (t.controllerFailure) err.append("• Ошибка контроллера\n");
-            if (t.throttleFault) err.append("• Ошибка ручки газа\n");
-            if (t.brakeSensorFault) err.append("• Ошибка датчика тормоза\n");
-            if (t.motorHalfFault) err.append("• Ошибка мотора\n");
-            if (t.motorPhaseFault) err.append("• Ошибка фаз мотора\n");
-            if (t.batteryOvervoltage) err.append("• Перенапряжение батареи\n");
-            if (t.batteryUndervoltage) err.append("• Низкое напряжение батареи\n");
-            if (t.abnormalCommunication) err.append("• Ошибка связи\n");
+            //noinspection ExtractMethodRecommender
+            var err = new StringJoiner("\n");
 
-            tvErrors.setText(err.toString().trim());
+            if (t.lockedRotorFault) err.add("• Блокировка ротора");
+            if (t.hardwareOvercurrent) err.add("• Перегрузка по току");
+            if (t.controllerFailure) err.add("• Ошибка контроллера");
+            if (t.throttleFault) err.add("• Ошибка ручки газа");
+            if (t.brakeSensorFault) err.add("• Ошибка датчика тормоза");
+            if (t.motorHalfFault) err.add("• Ошибка мотора");
+            if (t.motorPhaseFault) err.add("• Ошибка фаз мотора");
+            if (t.batteryOvervoltage) err.add("• Перенапряжение батареи");
+            if (t.batteryUndervoltage) err.add("• Низкое напряжение батареи");
+            if (t.abnormalCommunication) err.add("• Ошибка связи");
+
+            tvErrors.setText(err.toString());
             cardErrors.setVisibility(View.VISIBLE);
         } else {
             cardErrors.setVisibility(View.GONE);
@@ -412,27 +404,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateLightsButton() {
-        btnLights.setText(lightsOn ? "💡 Свет: ВКЛ" : "💡 Свет: ВЫКЛ");
+        btnLights.setText("💡 Свет");
         btnLights.setTextColor(lightsOn ? Color.BLACK : Color.WHITE);
         btnLights.setBackgroundResource(lightsOn ?
                 R.drawable.btn_yellow : R.drawable.btn_non_active);
     }
 
     private void updateParkingButton() {
-        btnParking.setText(parkingOn ? "🔒 Снять парковку" : "🔓 Парковка");
+        btnParking.setText(parkingOn ? "🔒 Парковка" : "🔓 Парковка");
         btnParking.setBackgroundResource(parkingOn ?
                 R.drawable.btn_red : R.drawable.btn_non_active);
     }
 
     private void updateStartingModeButton() {
-        btnStartingMode.setText(startingModeOn ? "🎯 Кик-старт: ВКЛ" : "🎯 Кик-старт: ВЫКЛ");
+        btnStartingMode.setText("🎯 Кик-старт");
         btnStartingMode.setTextColor(startingModeOn ? Color.BLACK : Color.WHITE);
         btnStartingMode.setBackgroundResource(startingModeOn ?
                 R.drawable.btn_active : R.drawable.btn_non_active);
     }
 
     private void updateCruiseButton() {
-        btnCruise.setText(cruiseOn ? "⛵ Круиз: ВКЛ" : "⛵ Круиз: ВЫКЛ");
+        btnCruise.setText("⛵ Круиз");
         btnCruise.setTextColor(cruiseOn ? Color.BLACK : Color.WHITE);
         btnCruise.setBackgroundResource(cruiseOn ?
                 R.drawable.btn_active : R.drawable.btn_non_active);
