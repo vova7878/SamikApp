@@ -71,6 +71,7 @@ public class ScooterManager implements DeviceCallback {
     public static final int RIDE_MODE_ECO = 1;
     public static final int RIDE_MODE_D = 2;
     public static final int RIDE_MODE_S = 3;
+    public static final int RIDE_MODE_WALK = 4;
 
     public void setRideMode(int mode) {
         manager.queueCommand(MODE_SWITCH, (byte) mode);

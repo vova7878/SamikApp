@@ -3,6 +3,7 @@ package com.v7878.samik;
 import static com.v7878.samik.bluetooth.ScooterManager.RIDE_MODE_D;
 import static com.v7878.samik.bluetooth.ScooterManager.RIDE_MODE_ECO;
 import static com.v7878.samik.bluetooth.ScooterManager.RIDE_MODE_S;
+import static com.v7878.samik.bluetooth.ScooterManager.RIDE_MODE_WALK;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -54,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnLights, btnParking;
     private Button btnStartingMode, btnCruise;
     private Button btnToggleUnits, btnHorn;
-    private Button btnModeEco, btnModeD, btnModeS;
+    private Button btnModeEco, btnModeD, btnModeS, btnModeWalk;
 
     // Views — DIY
     private SeekBar sbMaxSpeed, sbStartTorque, sbMaxTorque, sbBrake;
@@ -122,6 +123,7 @@ public class MainActivity extends AppCompatActivity {
         btnModeEco = findViewById(R.id.btnModeEco);
         btnModeD = findViewById(R.id.btnModeD);
         btnModeS = findViewById(R.id.btnModeS);
+        btnModeWalk = findViewById(R.id.btnModeWalk);
 
         btnDisconnect = findViewById(R.id.btnDisconnect);
         btnLights = findViewById(R.id.btnLights);
@@ -180,6 +182,7 @@ public class MainActivity extends AppCompatActivity {
         btnModeEco.setOnClickListener(v -> smanager.setRideMode(RIDE_MODE_ECO));
         btnModeD.setOnClickListener(v -> smanager.setRideMode(RIDE_MODE_D));
         btnModeS.setOnClickListener(v -> smanager.setRideMode(RIDE_MODE_S));
+        btnModeWalk.setOnClickListener(v -> smanager.setRideMode(RIDE_MODE_WALK));
 
         sbMaxSpeed.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override
@@ -300,15 +303,17 @@ public class MainActivity extends AppCompatActivity {
         tvCurrent.setText(String.format("%.3f A", t.current));
 
         var gearName = switch (t.gear) {
-            case 1 -> "ECO";
-            case 2 -> "D";
-            case 3 -> "S";
+            case RIDE_MODE_ECO -> "ECO";
+            case RIDE_MODE_D -> "D";
+            case RIDE_MODE_S -> "S";
+            case RIDE_MODE_WALK -> "WALK";
             default -> "?";
         };
         var gearColor = switch (t.gear) {
-            case 1 -> 0xFF81C784;
-            case 2 -> 0xFFFFB74D;
-            case 3 -> 0xFFE57373;
+            case RIDE_MODE_ECO -> 0xFF81C784;
+            case RIDE_MODE_D -> 0xFFFFB74D;
+            case RIDE_MODE_S -> 0xFFE57373;
+            case RIDE_MODE_WALK -> 0xFFFAFAFA;
             default -> 0xFFCE93D8;
         };
 
@@ -434,11 +439,13 @@ public class MainActivity extends AppCompatActivity {
         btnModeEco.setBackgroundResource(R.drawable.btn_non_active);
         btnModeD.setBackgroundResource(R.drawable.btn_non_active);
         btnModeS.setBackgroundResource(R.drawable.btn_non_active);
+        btnModeWalk.setBackgroundResource(R.drawable.btn_non_active);
 
         switch (currentMode) {
             case RIDE_MODE_ECO -> btnModeEco.setBackgroundResource(R.drawable.btn_active);
             case RIDE_MODE_D -> btnModeD.setBackgroundResource(R.drawable.btn_active);
             case RIDE_MODE_S -> btnModeS.setBackgroundResource(R.drawable.btn_active);
+            case RIDE_MODE_WALK -> btnModeWalk.setBackgroundResource(R.drawable.btn_active);
         }
     }
 
