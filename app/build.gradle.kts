@@ -30,7 +30,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             optimization {
-                enable = false
+                enable = true
             }
         }
     }
