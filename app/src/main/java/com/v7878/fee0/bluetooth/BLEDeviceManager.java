@@ -3,7 +3,7 @@ package com.v7878.fee0.bluetooth;
 import static android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE;
 import static android.os.Build.VERSION.SDK_INT;
 
-import android.annotation.SuppressLint;
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -17,6 +17,8 @@ import android.bluetooth.BluetoothStatusCodes;
 import android.content.Context;
 import android.os.Build.VERSION_CODES;
 
+import androidx.annotation.RequiresPermission;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
@@ -25,7 +27,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-@SuppressLint("MissingPermission")
 public class BLEDeviceManager {
     private static final UUID CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
@@ -91,16 +92,21 @@ public class BLEDeviceManager {
         currentPacket.set(null);
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     public void connect(String macAddress, DeviceCallback callback) {
+        Objects.requireNonNull(macAddress);
+        Objects.requireNonNull(callback);
+
         if (isConnected.get()) throw new IllegalStateException("Already connected");
+        resetState();
         this.callback = callback;
         callback.onConnecting();
-        resetState();
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
         //noinspection deprecation TODO
         gatt = device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE);
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     public void disconnect() {
         commandQueue.clear();
         if (gatt != null) {
@@ -113,6 +119,7 @@ public class BLEDeviceManager {
         resetState();
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     @SuppressWarnings("deprecation")
     private boolean writeDesc(BluetoothGatt g, BluetoothGattDescriptor desc, byte[] value) {
         Objects.requireNonNull(g);
@@ -130,6 +137,7 @@ public class BLEDeviceManager {
         return g.writeDescriptor(desc);
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     public boolean enableNotifications(BluetoothGattCharacteristic ch, boolean enable) {
         Objects.requireNonNull(ch);
 
@@ -143,6 +151,7 @@ public class BLEDeviceManager {
                 : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     public void queueCommand(BluetoothGattCharacteristic target, byte[] data, WriteCallback callback) {
         if (!commandQueue.offer(new PacketTask(target, data, callback))) {
             throw new AssertionError();
@@ -150,10 +159,12 @@ public class BLEDeviceManager {
         if (!isWriting.get()) processNextCommand();
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     public void queueCommand(BluetoothGattCharacteristic target, byte... data) {
         queueCommand(target, data, null);
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     @SuppressWarnings({"deprecation", "SameParameterValue"})
     private boolean writeChar(BluetoothGatt g, BluetoothGattCharacteristic ch, byte[] value, int type) {
         Objects.requireNonNull(g);
@@ -172,6 +183,7 @@ public class BLEDeviceManager {
         return g.writeCharacteristic(ch);
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     private void processNextCommand() {
         PacketTask task = commandQueue.poll();
         if (task == null) {
@@ -194,6 +206,7 @@ public class BLEDeviceManager {
     }
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
+        @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
         @Override
         public void onConnectionStateChange(BluetoothGatt g, int status, int newState) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
@@ -210,6 +223,7 @@ public class BLEDeviceManager {
             }
         }
 
+        @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
         @Override
         public void onMtuChanged(BluetoothGatt g, int mtu, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -245,6 +259,7 @@ public class BLEDeviceManager {
             onCharacteristicChanged(g, ch, ch.getValue());
         }
 
+        @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
         @Override
         public void onCharacteristicWrite(BluetoothGatt g, BluetoothGattCharacteristic ch, int status) {
             PacketTask task = currentPacket.getAndSet(null);
