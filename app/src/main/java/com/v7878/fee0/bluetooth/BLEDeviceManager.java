@@ -94,6 +94,7 @@ public class BLEDeviceManager {
         currentPacket.set(null);
     }
 
+    @SuppressWarnings("deprecation")
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     public void connect(String macAddress, DeviceCallback callback) {
         Objects.requireNonNull(macAddress);

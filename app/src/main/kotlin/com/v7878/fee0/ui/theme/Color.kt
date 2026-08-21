@@ -12,3 +12,5 @@ val BtnRed = Color(0xFFC54E58)
 
 val BgCard = Color(0xFF151E2E)
 var BgCardText = Color(0xFF6B7A90)
+
+var DividerColor = Color(0xFF2A3447)

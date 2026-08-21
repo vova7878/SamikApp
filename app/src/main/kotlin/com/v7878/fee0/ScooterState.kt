@@ -14,7 +14,10 @@ class ScooterState {
     var singleMileage: Float? by mainThreadStateOf(null)
     var totalMileage: Int? by mainThreadStateOf(null)
 
-    // int controllerTemp
+    var controllerTemp: Int? by mainThreadStateOf(null)
+    var motorTemp: Int? by mainThreadStateOf(null)
+    var batteryTemp: Int? by mainThreadStateOf(null)
+
     // lights
     // startingMode
     // cruiseControl

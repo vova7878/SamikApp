@@ -13,4 +13,11 @@
     <string name="mileage_placeholder">--</string>
     <string name="single_mileage_km">%1$.2f км</string>
     <string name="total_mileage_km">%1$d км</string>
+
+    <string name="temp_placeholder">-- °C</string>
+    <string name="temp_celsius">%1$d °C</string>
+
+    <string name="controller">Контроллер</string>
+    <string name="motor">Мотор</string>
+    <string name="battery">Батарея</string>
 </resources>

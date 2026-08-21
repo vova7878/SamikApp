@@ -47,6 +47,7 @@ import com.v7878.fee0.ui.theme.ActivityBackground
 import com.v7878.fee0.ui.theme.BgCardText
 import com.v7878.fee0.ui.theme.BtnBlue
 import com.v7878.fee0.ui.theme.BtnRed
+import com.v7878.fee0.ui.theme.DividerColor
 import com.v7878.fee0.ui.theme.MainTheme
 import com.v7878.fee0.ui.theme.White
 
@@ -77,6 +78,30 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainPreview() {
     Main(state = ScooterState())
+}
+
+@Composable
+fun TextElement(
+    modifier: Modifier = Modifier,
+    alignment: Alignment.Horizontal = Alignment.CenterHorizontally,
+    name: String,
+    value: String
+) {
+    Column(modifier = modifier, horizontalAlignment = alignment) {
+        Text(
+            text = name,
+            color = BgCardText,
+            fontSize = 11.sp,
+            letterSpacing = 0.1.em
+        )
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = value,
+            color = White,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
 }
 
 enum class ConnectionButtonState(
@@ -127,10 +152,10 @@ fun Main(state: ScooterState) {
                     .widthIn(min = 150.dp)
             ) {
                 Text(
-                    text = if (state.connected)
-                        stringResource(R.string.disconnect)
-                    else
-                        stringResource(R.string.connect)
+                    text = when (state.connected) {
+                        true -> stringResource(R.string.disconnect)
+                        false -> stringResource(R.string.connect)
+                    }
                 )
             }
         }
@@ -151,13 +176,60 @@ fun Main(state: ScooterState) {
                 modifier = Modifier
                     .height(IntrinsicSize.Min)
             ) {
-                SingleMilage(modifier = Modifier.weight(1f), state = state)
-                VerticalDivider(
-                    modifier = Modifier.fillMaxHeight(),
-                    thickness = 1.dp,
-                    color = Color(0xFF2A3447)
+                TextElement(
+                    modifier = Modifier.weight(1f),
+                    alignment = Alignment.Start,
+                    name = stringResource(R.string.single_mileage),
+                    value = when (val mileage = state.singleMileage) {
+                        null -> stringResource(R.string.mileage_placeholder)
+                        // TODO: мили
+                        else -> stringResource(R.string.single_mileage_km, mileage)
+                    }
                 )
-                TotalMilage(modifier = Modifier.weight(1f), state = state)
+                VerticalDivider(color = DividerColor)
+                TextElement(
+                    modifier = Modifier.weight(1f),
+                    alignment = Alignment.End,
+                    name = stringResource(R.string.total_mileage),
+                    value = when (val mileage = state.totalMileage) {
+                        null -> stringResource(R.string.mileage_placeholder)
+                        // TODO: мили
+                        else -> stringResource(R.string.total_mileage_km, mileage)
+                    }
+                )
+            }
+        }
+        SimpleCard {
+            Row(
+                modifier = Modifier
+                    .height(IntrinsicSize.Min)
+            ) {
+                TextElement(
+                    modifier = Modifier.weight(1f),
+                    name = stringResource(R.string.controller),
+                    value = when (val temp = state.controllerTemp) {
+                        null -> stringResource(R.string.temp_placeholder)
+                        else -> stringResource(R.string.temp_celsius, temp)
+                    }
+                )
+                VerticalDivider(color = DividerColor)
+                TextElement(
+                    modifier = Modifier.weight(1f),
+                    name = stringResource(R.string.motor),
+                    value = when (val temp = state.motorTemp) {
+                        null -> stringResource(R.string.temp_placeholder)
+                        else -> stringResource(R.string.temp_celsius, temp)
+                    }
+                )
+                VerticalDivider(color = DividerColor)
+                TextElement(
+                    modifier = Modifier.weight(1f),
+                    name = stringResource(R.string.battery),
+                    value = when (val temp = state.batteryTemp) {
+                        null -> stringResource(R.string.temp_placeholder)
+                        else -> stringResource(R.string.temp_celsius, temp)
+                    }
+                )
             }
         }
     }
@@ -227,56 +299,3 @@ fun ModeSelection(state: ScooterState) {
         }
     }
 }
-
-@Composable
-fun SingleMilage(
-    modifier: Modifier = Modifier,
-    state: ScooterState
-) {
-    Column(modifier = modifier, horizontalAlignment = Alignment.Start) {
-        Text(
-            text = stringResource(R.string.single_mileage),
-            color = BgCardText,
-            fontSize = 11.sp,
-            letterSpacing = 0.1.em
-        )
-        Spacer(Modifier.height(10.dp))
-        Text(
-            // TODO: мили
-            text = when (val mileage = state.singleMileage) {
-                null -> stringResource(R.string.mileage_placeholder)
-                else -> stringResource(R.string.single_mileage_km, mileage)
-            },
-            color = White,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-fun TotalMilage(
-    modifier: Modifier = Modifier,
-    state: ScooterState
-) {
-    Column(modifier = modifier, horizontalAlignment = Alignment.End) {
-        Text(
-            text = stringResource(R.string.total_mileage),
-            color = BgCardText,
-            fontSize = 11.sp,
-            letterSpacing = 0.1.em
-        )
-        Spacer(Modifier.height(10.dp))
-        Text(
-            // TODO: мили
-            text = when (val mileage = state.totalMileage) {
-                null -> stringResource(R.string.mileage_placeholder)
-                else -> stringResource(R.string.total_mileage_km, mileage)
-            },
-            color = White,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
