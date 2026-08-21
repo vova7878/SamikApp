@@ -1,4 +1,4 @@
-package com.v7878.fee0
+package com.v7878.fee0.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,32 +12,6 @@ import com.v7878.fee0.ui.theme.BtnBlue
 import com.v7878.fee0.ui.theme.BtnDarkBlue
 import com.v7878.fee0.ui.theme.desaturate
 import com.v7878.fee0.ui.theme.lighten
-
-@Composable
-fun SimpleButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    color: Color = BtnBlue,
-    content: @Composable () -> Unit,
-) {
-    val disabledColor = color.desaturate(0.5f)
-
-    Button(
-        enabled = enabled,
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = color,
-            disabledContainerColor = disabledColor,
-            contentColor = Color.White
-        ),
-        border = null
-    ) {
-        content()
-    }
-}
 
 interface ButtonState {
     val containerColor: Color
@@ -97,3 +71,21 @@ fun <BS : ButtonState> StatefulButton(
         content()
     }
 }
+
+// @Composable
+// fun SimpleButton(
+//     onClick: () -> Unit,
+//     modifier: Modifier = Modifier,
+//     enabled: Boolean = true,
+//     color: Color = BtnBlue,
+//     content: @Composable () -> Unit,
+// ) {
+//     StatefulButton(
+//         onClick = onClick,
+//         modifier = modifier,
+//         enabled = enabled,
+//         state = TODO;
+//     ) {
+//         content()
+//     }
+// }

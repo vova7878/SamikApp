@@ -9,6 +9,11 @@ class ScooterState {
     var speed: Float? by mainThreadStateOf(null)
     var motorRpm: Int? by mainThreadStateOf(null)
     var gear: Int? by mainThreadStateOf(null)
+    var unitMph: Boolean by mainThreadStateOf(false)
+
+    var singleMileage: Float? by mainThreadStateOf(null)
+    var totalMileage: Int? by mainThreadStateOf(null)
+
     // int controllerTemp
     // lights
     // startingMode
@@ -16,8 +21,6 @@ class ScooterState {
     // speedUnitMph
     // locked
     // bluetoothBound
-    // float singleMileage
-    // int totalMileage
     // cruisingCondition
     // int instrumentVersion, instrumentHwVersion, instrumentSwVersion;
     // int controllerVersion, controllerHwVersion, controllerSwVersion;

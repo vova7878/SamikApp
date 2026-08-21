@@ -3,4 +3,14 @@
 
     <string name="connect">Подключиться</string>
     <string name="disconnect">Отключиться</string>
+    <string name="device_not_selected">Не выбрано</string>
+
+    <string name="mode_selection">ВЫБОР РЕЖИМА</string>
+
+    <string name="total_mileage">ОБЩИЙ ПРОБЕГ</string>
+    <string name="single_mileage">ПОЕЗДКА</string>
+
+    <string name="mileage_placeholder">--</string>
+    <string name="single_mileage_km">%1$.2f км</string>
+    <string name="total_mileage_km">%1$d км</string>
 </resources>
