@@ -15,8 +15,12 @@ android {
 
     defaultConfig {
         applicationId = "com.v7878.fee0"
-        minSdk = 26
-        targetSdk = 37
+        minSdk {
+            version = release(26)
+        }
+        targetSdk {
+            version = release(37)
+        }
         versionCode = 1
         versionName = "1.0"
     }
@@ -43,6 +47,7 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
+
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

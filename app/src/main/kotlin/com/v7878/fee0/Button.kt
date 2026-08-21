@@ -4,13 +4,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.v7878.fee0.ui.theme.BtnActive
-import com.v7878.fee0.ui.theme.BtnNonActive
+import com.v7878.fee0.ui.theme.BtnBlue
+import com.v7878.fee0.ui.theme.BtnDarkBlue
 import com.v7878.fee0.ui.theme.desaturate
 import com.v7878.fee0.ui.theme.lighten
 
@@ -19,8 +18,8 @@ fun SimpleButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    color: Color = BtnActive,
-    text: String
+    color: Color = BtnBlue,
+    content: @Composable () -> Unit,
 ) {
     val disabledColor = color.desaturate(0.5f)
 
@@ -35,23 +34,46 @@ fun SimpleButton(
             contentColor = Color.White
         ),
         border = null
-        //contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
     ) {
-        Text(text = text)
+        content()
+    }
+}
+
+interface ButtonState {
+    val containerColor: Color
+    val hasBorder: Boolean
+}
+
+enum class SimpleButtonState(
+    override val containerColor: Color,
+    override val hasBorder: Boolean
+) : ButtonState {
+    Active(
+        containerColor = BtnBlue,
+        hasBorder = false
+    ),
+    NonActive(
+        containerColor = BtnDarkBlue,
+        hasBorder = true
+    )
+}
+
+fun simpleState(state: Boolean): SimpleButtonState {
+    return when (state) {
+        true -> SimpleButtonState.Active
+        false -> SimpleButtonState.NonActive
     }
 }
 
 @Composable
-fun StatefulButton(
+fun <BS : ButtonState> StatefulButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    activeColor: Color = BtnActive,
-    nonActiveColor: Color = BtnNonActive,
-    text: String,
-    active: Boolean
+    state: BS,
+    content: @Composable () -> Unit,
 ) {
-    val containerColor = if (active) activeColor else nonActiveColor
+    val containerColor = state.containerColor
     val disabledContainerColor = containerColor.desaturate(0.5f)
 
     val borderColor = if (enabled) {
@@ -70,9 +92,8 @@ fun StatefulButton(
             disabledContainerColor = disabledContainerColor,
             contentColor = Color.White
         ),
-        border = if (active) null else BorderStroke(1.dp, borderColor)
-        //contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+        border = if (!state.hasBorder) null else BorderStroke(1.dp, borderColor)
     ) {
-        Text(text = text)
+        content()
     }
 }

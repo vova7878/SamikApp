@@ -1,12 +1,15 @@
 package com.v7878.fee0
 
 class ScooterState {
+    var connected: Boolean by mainThreadStateOf(false)
+
+    var name: String? by mainThreadStateOf(null)
     var voltage: Float? by mainThreadStateOf(null)
     var current: Float? by mainThreadStateOf(null)
     var speed: Float? by mainThreadStateOf(null)
     var motorRpm: Int? by mainThreadStateOf(null)
+    var gear: Int? by mainThreadStateOf(null)
     // int controllerTemp
-    // int gear
     // lights
     // startingMode
     // cruiseControl
