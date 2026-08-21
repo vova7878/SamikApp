@@ -60,20 +60,22 @@ public class BLEDeviceManager {
 
         void onConnected();
 
+        void onFailedConnection();
+
+        void onDisconnected();
+
         void onServicesDiscovered(List<BluetoothGattService> services);
 
         void onNotify(BluetoothGattCharacteristic ch, byte[] raw);
 
         void onWrite(BluetoothGattCharacteristic ch, byte[] raw, boolean success);
-
-        void onDisconnected();
     }
 
     private final Context context;
     private final BluetoothAdapter bluetoothAdapter;
 
-    private DeviceCallback callback;
-    private BluetoothGatt gatt;
+    private volatile DeviceCallback callback;
+    private volatile BluetoothGatt gatt;
 
     private final AtomicBoolean isConnected = new AtomicBoolean(false);
     private final AtomicBoolean isWriting = new AtomicBoolean(false);
@@ -96,7 +98,9 @@ public class BLEDeviceManager {
     public void connect(String macAddress, DeviceCallback callback) {
         Objects.requireNonNull(macAddress);
         Objects.requireNonNull(callback);
-
+        if (bluetoothAdapter == null) {
+            throw new IllegalStateException("Bluetooth is not available");
+        }
         if (isConnected.get()) throw new IllegalStateException("Already connected");
         resetState();
         this.callback = callback;
@@ -178,7 +182,7 @@ public class BLEDeviceManager {
                 return false;
             }
         }
-        ch.setWriteType(WRITE_TYPE_NO_RESPONSE);
+        ch.setWriteType(type);
         ch.setValue(value);
         return g.writeCharacteristic(ch);
     }
@@ -226,22 +230,35 @@ public class BLEDeviceManager {
         @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
         @Override
         public void onMtuChanged(BluetoothGatt g, int mtu, int status) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                g.discoverServices();
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                callback.onFailedConnection();
+                disconnect();
+                return;
             }
+            // Всё равно продолжаем подключение
+            g.discoverServices();
         }
 
+        @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
         @Override
         public void onServicesDiscovered(BluetoothGatt g, int status) {
             if (status != BluetoothGatt.GATT_SUCCESS) {
+                callback.onFailedConnection();
+                disconnect();
                 return;
             }
-            callback.onServicesDiscovered(gatt.getServices());
+            callback.onServicesDiscovered(g.getServices());
         }
 
+        @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
         @Override
         public void onDescriptorWrite(BluetoothGatt g, BluetoothGattDescriptor descriptor, int status) {
-            if (CCCD_UUID.equals(descriptor.getUuid()) && status == BluetoothGatt.GATT_SUCCESS) {
+            if (CCCD_UUID.equals(descriptor.getUuid())) {
+                if (status != BluetoothGatt.GATT_SUCCESS) {
+                    callback.onFailedConnection();
+                    disconnect();
+                    return;
+                }
                 callback.onConnected();
             }
         }
