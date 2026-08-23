@@ -17,7 +17,7 @@
     <string name="temp_placeholder">-- °C</string>
     <string name="temp_celsius">%1$d °C</string>
 
-    <string name="controller">Контроллер</string>
-    <string name="motor">Мотор</string>
-    <string name="battery">Батарея</string>
+    <string name="controller">КОНТРОЛЛЕР</string>
+    <string name="motor">МОТОР</string>
+    <string name="battery">БАТАРЕЯ</string>
 </resources>

@@ -18,6 +18,10 @@ class ScooterState {
     var motorTemp: Int? by mainThreadStateOf(null)
     var batteryTemp: Int? by mainThreadStateOf(null)
 
+    var throttleValue: Int? by mainThreadStateOf(null) // 0-250
+    var brakeVal1: Int? by mainThreadStateOf(null) // 0-250
+    var brakeVal2: Int? by mainThreadStateOf(null) // 0-250
+
     // lights
     // startingMode
     // cruiseControl

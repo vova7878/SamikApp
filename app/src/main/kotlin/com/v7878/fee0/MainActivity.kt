@@ -81,11 +81,11 @@ fun MainPreview() {
 }
 
 @Composable
-fun TextElement(
+fun NamedElement(
     modifier: Modifier = Modifier,
     alignment: Alignment.Horizontal = Alignment.CenterHorizontally,
     name: String,
-    value: String
+    content: @Composable () -> Unit,
 ) {
     Column(modifier = modifier, horizontalAlignment = alignment) {
         Text(
@@ -95,6 +95,18 @@ fun TextElement(
             letterSpacing = 0.1.em
         )
         Spacer(Modifier.height(10.dp))
+        content()
+    }
+}
+
+@Composable
+fun TextElement(
+    modifier: Modifier = Modifier,
+    alignment: Alignment.Horizontal = Alignment.CenterHorizontally,
+    name: String,
+    value: String
+) {
+    NamedElement(modifier = modifier, alignment = alignment, name = name) {
         Text(
             text = value,
             color = White,
@@ -160,75 +172,81 @@ fun Main(state: ScooterState) {
             }
         }
         SimpleCard {
-            Column {
+            ModeSelection(state = state)
+        }
+        SimpleCard {
+            MileageBlock(state = state)
+        }
+        SimpleCard {
+            TemperatureBlock(state = state)
+        }
+    }
+}
+
+@Composable
+fun ModeSelection(state: ScooterState) {
+    NamedElement(
+        name = stringResource(R.string.mode_selection),
+        alignment = Alignment.Start
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
+            /*.heightIn(min = 52.dp)*/
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            StatefulButton(
+                state = simpleState(state.gear == MODE_ECO),
+                onClick = { state.gear = MODE_ECO },
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .weight(1f)
+            ) {
                 Text(
-                    text = stringResource(R.string.mode_selection),
-                    color = BgCardText,
-                    fontSize = 11.sp,
-                    letterSpacing = 0.1.em
-                )
-                Spacer(Modifier.height(10.dp))
-                ModeSelection(state = state)
-            }
-        }
-        SimpleCard {
-            Row(
-                modifier = Modifier
-                    .height(IntrinsicSize.Min)
-            ) {
-                TextElement(
-                    modifier = Modifier.weight(1f),
-                    alignment = Alignment.Start,
-                    name = stringResource(R.string.single_mileage),
-                    value = when (val mileage = state.singleMileage) {
-                        null -> stringResource(R.string.mileage_placeholder)
-                        // TODO: мили
-                        else -> stringResource(R.string.single_mileage_km, mileage)
-                    }
-                )
-                VerticalDivider(color = DividerColor)
-                TextElement(
-                    modifier = Modifier.weight(1f),
-                    alignment = Alignment.End,
-                    name = stringResource(R.string.total_mileage),
-                    value = when (val mileage = state.totalMileage) {
-                        null -> stringResource(R.string.mileage_placeholder)
-                        // TODO: мили
-                        else -> stringResource(R.string.total_mileage_km, mileage)
-                    }
+                    text = "ECO",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
-        }
-        SimpleCard {
-            Row(
+            StatefulButton(
+                state = simpleState(state.gear == MODE_D),
+                onClick = { state.gear = MODE_D },
                 modifier = Modifier
-                    .height(IntrinsicSize.Min)
+                    .fillMaxHeight()
+                    .weight(1f)
             ) {
-                TextElement(
-                    modifier = Modifier.weight(1f),
-                    name = stringResource(R.string.controller),
-                    value = when (val temp = state.controllerTemp) {
-                        null -> stringResource(R.string.temp_placeholder)
-                        else -> stringResource(R.string.temp_celsius, temp)
-                    }
+                Text(
+                    text = "D",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
                 )
-                VerticalDivider(color = DividerColor)
-                TextElement(
-                    modifier = Modifier.weight(1f),
-                    name = stringResource(R.string.motor),
-                    value = when (val temp = state.motorTemp) {
-                        null -> stringResource(R.string.temp_placeholder)
-                        else -> stringResource(R.string.temp_celsius, temp)
-                    }
+            }
+            StatefulButton(
+                state = simpleState(state.gear == MODE_S),
+                onClick = { state.gear = MODE_S },
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .weight(1f)
+            ) {
+                Text(
+                    text = "S",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
                 )
-                VerticalDivider(color = DividerColor)
-                TextElement(
-                    modifier = Modifier.weight(1f),
-                    name = stringResource(R.string.battery),
-                    value = when (val temp = state.batteryTemp) {
-                        null -> stringResource(R.string.temp_placeholder)
-                        else -> stringResource(R.string.temp_celsius, temp)
-                    }
+            }
+            StatefulButton(
+                state = simpleState(state.gear == MODE_WALK),
+                onClick = { state.gear = MODE_WALK },
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .weight(1f)
+            ) {
+                Text(
+                    text = "WALK",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
@@ -236,66 +254,66 @@ fun Main(state: ScooterState) {
 }
 
 @Composable
-fun ModeSelection(state: ScooterState) {
+fun MileageBlock(state: ScooterState) {
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min),
-        /*.heightIn(min = 52.dp)*/
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .height(IntrinsicSize.Min)
     ) {
-        StatefulButton(
-            state = simpleState(state.gear == MODE_ECO),
-            onClick = { state.gear = MODE_ECO },
-            modifier = Modifier
-                .fillMaxHeight()
-                .weight(1f)
-        ) {
-            Text(
-                text = "ECO",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        StatefulButton(
-            state = simpleState(state.gear == MODE_D),
-            onClick = { state.gear = MODE_D },
-            modifier = Modifier
-                .fillMaxHeight()
-                .weight(1f)
-        ) {
-            Text(
-                text = "D",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        StatefulButton(
-            state = simpleState(state.gear == MODE_S),
-            onClick = { state.gear = MODE_S },
-            modifier = Modifier
-                .fillMaxHeight()
-                .weight(1f)
-        ) {
-            Text(
-                text = "S",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        StatefulButton(
-            state = simpleState(state.gear == MODE_WALK),
-            onClick = { state.gear = MODE_WALK },
-            modifier = Modifier
-                .fillMaxHeight()
-                .weight(1f)
-        ) {
-            Text(
-                text = "WALK",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        TextElement(
+            modifier = Modifier.weight(1f),
+            alignment = Alignment.Start,
+            name = stringResource(R.string.single_mileage),
+            value = when (val mileage = state.singleMileage) {
+                null -> stringResource(R.string.mileage_placeholder)
+                // TODO: мили
+                else -> stringResource(R.string.single_mileage_km, mileage)
+            }
+        )
+        VerticalDivider(color = DividerColor)
+        TextElement(
+            modifier = Modifier.weight(1f),
+            alignment = Alignment.End,
+            name = stringResource(R.string.total_mileage),
+            value = when (val mileage = state.totalMileage) {
+                null -> stringResource(R.string.mileage_placeholder)
+                // TODO: мили
+                else -> stringResource(R.string.total_mileage_km, mileage)
+            }
+        )
+    }
+}
+
+@Composable
+fun TemperatureBlock(state: ScooterState) {
+    Row(
+        modifier = Modifier
+            .height(IntrinsicSize.Min)
+    ) {
+        TextElement(
+            modifier = Modifier.weight(1f),
+            name = stringResource(R.string.controller),
+            value = when (val temp = state.controllerTemp) {
+                null -> stringResource(R.string.temp_placeholder)
+                else -> stringResource(R.string.temp_celsius, temp)
+            }
+        )
+        VerticalDivider(color = DividerColor)
+        TextElement(
+            modifier = Modifier.weight(1f),
+            name = stringResource(R.string.motor),
+            value = when (val temp = state.motorTemp) {
+                null -> stringResource(R.string.temp_placeholder)
+                else -> stringResource(R.string.temp_celsius, temp)
+            }
+        )
+        VerticalDivider(color = DividerColor)
+        TextElement(
+            modifier = Modifier.weight(1f),
+            name = stringResource(R.string.battery),
+            value = when (val temp = state.batteryTemp) {
+                null -> stringResource(R.string.temp_placeholder)
+                else -> stringResource(R.string.temp_celsius, temp)
+            }
+        )
     }
 }
