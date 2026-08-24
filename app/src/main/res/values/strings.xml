@@ -20,4 +20,10 @@
     <string name="controller">КОНТРОЛЛЕР</string>
     <string name="motor">МОТОР</string>
     <string name="battery">БАТАРЕЯ</string>
+
+    <string name="rpm">RPM</string>
+    <string name="speed">СКОРОСТЬ</string>
+
+    <string name="speed_placeholder">--.-</string>
+    <string name="speedometer">%1$.1f</string>
 </resources>
