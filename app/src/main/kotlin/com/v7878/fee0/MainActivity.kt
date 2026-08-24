@@ -1,9 +1,15 @@
 package com.v7878.fee0
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothDevice
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,15 +34,21 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -50,10 +62,6 @@ import com.v7878.fee0.ui.SimpleCard
 import com.v7878.fee0.ui.StatefulButton
 import com.v7878.fee0.ui.simpleState
 import com.v7878.fee0.ui.theme.ActivityBackground
-import com.v7878.fee0.ui.theme.Batt0
-import com.v7878.fee0.ui.theme.Batt100
-import com.v7878.fee0.ui.theme.Batt50
-import com.v7878.fee0.ui.theme.Batt90
 import com.v7878.fee0.ui.theme.BgCardText
 import com.v7878.fee0.ui.theme.BtnBlue
 import com.v7878.fee0.ui.theme.BtnRed
@@ -63,12 +71,30 @@ import com.v7878.fee0.ui.theme.MainTheme
 import com.v7878.fee0.ui.theme.White
 
 class MainActivity : ComponentActivity() {
-    private val scooterState = ScooterState()
-    //private val controller = ScooterController(scooterState)
+    private var device: BluetoothDevice? by mutableStateOf(null)
+    private var scooterState by mainThreadStateOf(ScooterState())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        scooterState = ScooterState(brakeVal1 = 100, throttleValue = 50)
+
+        val pairing = DevicePairing(
+            activity = this,
+            onDevicePaired = { scanResult ->
+                device = scanResult.device
+
+                // TODO
+                scooterState = scooterState.copy(connected = true)
+                //binder?.connect(device)
+            },
+            onPairingFailed = { message ->
+                Log.e("TEST", "" + message)
+                // TODO Показать ошибку пользователю
+            }
+        )
+
         setContent {
             MainTheme(darkTheme = true) {
                 Scaffold { innerPadding ->
@@ -77,18 +103,41 @@ class MainActivity : ComponentActivity() {
                             .background(ActivityBackground)
                             .padding(innerPadding)
                     ) {
-                        Main(state = scooterState)
+                        Main(device = device, state = scooterState, pairing = pairing)
                     }
                 }
             }
         }
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun MainPreview() {
-    Main(state = ScooterState())
+    override fun onStart() {
+        super.onStart()
+
+        requestPermissions {
+            // TODO
+        }
+    }
+
+    private fun requestPermissions(
+        action: () -> Unit
+    ) {
+        if (Permissions.allGranted(this)) {
+            action()
+            return
+        }
+        val permissions = Permissions.requiredPermissions()
+        if (permissions.isNotEmpty()) {
+            registerForActivityResult(
+                ActivityResultContracts.RequestMultiplePermissions()
+            ) { results ->
+                if (results.values.all { it }) {
+                    action()
+                }
+            }.launch(permissions)
+        } else {
+            action()
+        }
+    }
 }
 
 @Composable
@@ -148,8 +197,36 @@ enum class ConnectionButtonState(
     )
 }
 
+fun Modifier.disabledWhen(disabled: Boolean): Modifier = composed {
+    val progress by animateFloatAsState(
+        targetValue = if (disabled) 0.6f else 1f,
+        animationSpec = tween(200)
+    )
+
+    this.then(
+        if (disabled) {
+            Modifier
+                .graphicsLayer {
+                    val saturationMatrix = ColorMatrix().apply { setToSaturation(0f) }
+                    colorFilter = ColorFilter.colorMatrix(saturationMatrix)
+                    alpha = progress
+                }
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            event.changes.forEach { it.consume() }
+                        }
+                    }
+                }
+        } else {
+            Modifier.graphicsLayer { this.alpha = progress }
+        }
+    )
+}
+
 @Composable
-fun Main(state: ScooterState) {
+fun Main(device: BluetoothDevice?, state: ScooterState, pairing: DevicePairing) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -157,26 +234,34 @@ fun Main(state: ScooterState) {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Header(state = state)
+        Header(device = device, state = state, pairing = pairing)
         SimpleCard(
+            modifier = Modifier.disabledWhen(!state.connected),
             contentPadding = PaddingValues(20.dp)
         ) {
             DashboardCard(state = state)
         }
-        SimpleCard {
+        SimpleCard(
+            modifier = Modifier.disabledWhen(!state.connected)
+        ) {
             ModeSelection(state = state)
         }
-        SimpleCard {
+        SimpleCard(
+            modifier = Modifier.disabledWhen(!state.connected)
+        ) {
             MileageBlock(state = state)
         }
-        SimpleCard {
+        SimpleCard(
+            modifier = Modifier.disabledWhen(!state.connected)
+        ) {
             TemperatureBlock(state = state)
         }
     }
 }
 
+@SuppressLint("MissingPermission")
 @Composable
-fun Header(state: ScooterState) {
+fun Header(device: BluetoothDevice?, state: ScooterState, pairing: DevicePairing) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -185,7 +270,10 @@ fun Header(state: ScooterState) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = state.name ?: stringResource(R.string.device_not_selected),
+            text = when (device) {
+                null -> stringResource(R.string.device_not_selected)
+                else -> device.name ?: device.address
+            },
             style = MaterialTheme.typography.headlineMedium,
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold
@@ -196,7 +284,17 @@ fun Header(state: ScooterState) {
                 false -> ConnectionButtonState.Disconnected
             },
             onClick = {
-                state.connected = !state.connected
+                if (state.connected) {
+                    // TODO
+                    //binder?.disconnect()
+                } else {
+                    if (device == null) {
+                        pairing.startPairing()
+                    } else {
+                        // TODO
+                        //binder?.connect(device)
+                    }
+                }
             },
             modifier = Modifier
                 .widthIn(min = 150.dp)
@@ -305,29 +403,6 @@ fun DashboardCard(state: ScooterState) {
     }
 }
 
-fun batteryColor(percent: Int): Color {
-    val p = percent.coerceIn(0, 100)
-
-    val points = listOf(
-        100 to Batt100,
-        90 to Batt90,
-        50 to Batt50,
-        0 to Batt0
-    )
-
-    for (i in 0 until points.size - 1) {
-        val (p1, c1) = points[i]
-        val (p2, c2) = points[i + 1]
-
-        if (p in p2..p1) {
-            val fraction = (p1 - p).toFloat() / (p1 - p2)
-            return lerp(c1, c2, fraction)
-        }
-    }
-
-    throw AssertionError()
-}
-
 @Composable
 fun ModeSelection(state: ScooterState) {
     NamedElement(
@@ -343,7 +418,10 @@ fun ModeSelection(state: ScooterState) {
         ) {
             StatefulButton(
                 state = simpleState(state.gear == MODE_ECO),
-                onClick = { state.gear = MODE_ECO },
+                onClick = {
+                    // TODO
+                    //state.gear = MODE_ECO
+                },
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(1f)
@@ -356,7 +434,10 @@ fun ModeSelection(state: ScooterState) {
             }
             StatefulButton(
                 state = simpleState(state.gear == MODE_D),
-                onClick = { state.gear = MODE_D },
+                onClick = {
+                    // TODO
+                    //state.gear = MODE_D
+                },
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(1f)
@@ -369,7 +450,10 @@ fun ModeSelection(state: ScooterState) {
             }
             StatefulButton(
                 state = simpleState(state.gear == MODE_S),
-                onClick = { state.gear = MODE_S },
+                onClick = {
+                    // TODO
+                    //state.gear = MODE_S
+                },
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(1f)
@@ -382,7 +466,10 @@ fun ModeSelection(state: ScooterState) {
             }
             StatefulButton(
                 state = simpleState(state.gear == MODE_WALK),
-                onClick = { state.gear = MODE_WALK },
+                onClick = {
+                    // TODO
+                    //state.gear = MODE_WALK
+                },
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(1f)

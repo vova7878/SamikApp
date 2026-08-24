@@ -1,26 +1,29 @@
 package com.v7878.fee0
 
-class ScooterState {
-    var connected: Boolean by mainThreadStateOf(false)
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
-    var name: String? by mainThreadStateOf(null)
-    var voltage: Float? by mainThreadStateOf(null)
-    var current: Float? by mainThreadStateOf(null)
-    var speed: Float? by mainThreadStateOf(null)
-    var motorRpm: Int? by mainThreadStateOf(null)
-    var gear: Int? by mainThreadStateOf(null)
-    var unitMph: Boolean by mainThreadStateOf(false)
+@Parcelize
+data class ScooterState(
+    val connected: Boolean = false,
 
-    var singleMileage: Float? by mainThreadStateOf(null)
-    var totalMileage: Int? by mainThreadStateOf(null)
+    val voltage: Float? = null,
+    val current: Float? = null,
+    val speed: Float? = null,
+    val motorRpm: Int? = null,
+    val gear: Int? = null,
+    val unitMph: Boolean = false,
 
-    var controllerTemp: Int? by mainThreadStateOf(null)
-    var motorTemp: Int? by mainThreadStateOf(null)
-    var batteryTemp: Int? by mainThreadStateOf(null)
+    val singleMileage: Float? = null,
+    val totalMileage: Int? = null,
 
-    var throttleValue: Int? by mainThreadStateOf(null) // 0-250
-    var brakeVal1: Int? by mainThreadStateOf(null) // 0-250
-    var brakeVal2: Int? by mainThreadStateOf(null) // 0-250
+    val controllerTemp: Int? = null,
+    val motorTemp: Int? = null,
+    val batteryTemp: Int? = null,
+
+    val throttleValue: Int? = null,
+    val brakeVal1: Int? = null,
+    val brakeVal2: Int? = null,
 
     // lights
     // startingMode
@@ -41,4 +44,4 @@ class ScooterState {
     // boolean throttleFault, brakeSensorFault, motorHalfFault;
     // boolean abnormalCommunication, batteryOvervoltage, batteryUndervoltage;
     // boolean motorPhaseFault;
-}
+) : Parcelable
