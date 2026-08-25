@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -49,7 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -82,8 +83,12 @@ class ScooterActions(
 )
 
 class MainActivity : ComponentActivity() {
+    private lateinit var permissionsLauncher: ActivityResultLauncher<Array<String>>
+    private var onRequiredGranted: (() -> Unit)? = null
+
     private var binder: ScooterService.ScooterBinder? = null
     private var device: BluetoothDevice? by mutableStateOf(null)
+    private var hasBlePermissions: Boolean by mutableStateOf(false)
     private var scooterState by mainThreadStateOf(ScooterState())
 
     private val serviceConnection = object : ServiceConnection {
@@ -103,6 +108,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        permissionsLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { _ ->
+            if (Permissions.allRequiredGranted(this)) {
+                onRequiredGranted?.invoke()
+            } else {
+                // TODO showError("Без доступа к Bluetooth приложение не может работать")
+            }
+        }
 
         val pairing = DevicePairing(
             activity = this,
@@ -131,7 +146,12 @@ class MainActivity : ComponentActivity() {
                             .background(ActivityBackground)
                             .padding(innerPadding)
                     ) {
-                        Main(device = device, state = scooterState, actions = actions)
+                        Main(
+                            device = device,
+                            state = scooterState,
+                            actions = actions,
+                            hasBlePermissions = hasBlePermissions
+                        )
                     }
                 }
             }
@@ -142,6 +162,7 @@ class MainActivity : ComponentActivity() {
         super.onStart()
 
         requestPermissions {
+            hasBlePermissions = true
             startAndBindService()
         }
     }
@@ -163,21 +184,16 @@ class MainActivity : ComponentActivity() {
     private fun requestPermissions(
         action: () -> Unit
     ) {
-        if (Permissions.allRequiredGranted(this)) {
+        if (Permissions.allGranted(this)) {
             action()
             return
         }
-        val permissions = Permissions.requiredPermissions()
-        if (permissions.isNotEmpty()) {
-            registerForActivityResult(
-                ActivityResultContracts.RequestMultiplePermissions()
-            ) { results ->
-                if (results.values.all { it }) {
-                    action()
-                }
-            }.launch(permissions)
-        } else {
+        val permissions = Permissions.allPermissions()
+        if (permissions.isEmpty()) {
             action()
+        } else {
+            onRequiredGranted = action
+            permissionsLauncher.launch(permissions)
         }
     }
 }
@@ -239,7 +255,7 @@ enum class ConnectionButtonState(
     )
 }
 
-fun Modifier.disabledWhen(disabled: Boolean): Modifier = composed {
+fun Modifier.disabled(disabled: Boolean): Modifier = composed {
     val progress by animateFloatAsState(
         targetValue = if (disabled) 0.6f else 1f,
         animationSpec = tween(200)
@@ -248,53 +264,53 @@ fun Modifier.disabledWhen(disabled: Boolean): Modifier = composed {
     this.then(
         if (disabled) {
             Modifier
+                .pointerInteropFilter { true }
                 .graphicsLayer {
-                    val saturationMatrix = ColorMatrix().apply { setToSaturation(0f) }
-                    colorFilter = ColorFilter.colorMatrix(saturationMatrix)
+                    val matrix = ColorMatrix()
+                    matrix.setToSaturation(0f)
+                    colorFilter = ColorFilter.colorMatrix(matrix)
                     alpha = progress
                 }
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            event.changes.forEach { it.consume() }
-                        }
-                    }
-                }
         } else {
-            Modifier.graphicsLayer { this.alpha = progress }
+            Modifier.graphicsLayer { alpha = progress }
         }
     )
 }
 
 @Composable
-fun Main(device: BluetoothDevice?, state: ScooterState, actions: ScooterActions) {
+fun Main(
+    device: BluetoothDevice?,
+    state: ScooterState,
+    actions: ScooterActions,
+    hasBlePermissions: Boolean
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(rememberScrollState())
+            .disabled(!hasBlePermissions),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Header(device = device, state = state, actions = actions)
         SimpleCard(
-            modifier = Modifier.disabledWhen(!state.connected),
+            modifier = Modifier.disabled(!state.connected),
             contentPadding = PaddingValues(20.dp)
         ) {
             DashboardCard(state = state)
         }
         SimpleCard(
-            modifier = Modifier.disabledWhen(!state.connected)
+            modifier = Modifier.disabled(!state.connected)
         ) {
             ModeSelection(state = state, actions = actions)
         }
         SimpleCard(
-            modifier = Modifier.disabledWhen(!state.connected)
+            modifier = Modifier.disabled(!state.connected)
         ) {
             MileageBlock(state = state)
         }
         SimpleCard(
-            modifier = Modifier.disabledWhen(!state.connected)
+            modifier = Modifier.disabled(!state.connected)
         ) {
             TemperatureBlock(state = state)
         }

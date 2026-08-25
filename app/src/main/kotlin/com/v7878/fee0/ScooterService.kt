@@ -39,7 +39,9 @@ class ScooterService : Service() {
             this@ScooterService.demoteToBackground()
         }
 
-        fun setMode(mode: Int) {}
+        fun setMode(mode: Int) {
+            TODO()
+        }
     }
 
     private val binder = ScooterBinder()
@@ -52,13 +54,14 @@ class ScooterService : Service() {
     override fun onCreate() {
         super.onCreate()
 
+        createNotificationChannel()
+
         controller = ScooterController()
     }
 
     override fun onBind(intent: Intent): IBinder = binder
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        createNotificationChannel()
         return START_STICKY
     }
 
