@@ -10,15 +10,21 @@ import androidx.core.content.ContextCompat
 object Permissions {
     fun requiredPermissions(): Array<String> {
         return if (SDK_INT >= VERSION_CODES.S) {
-            arrayOf(
-                Manifest.permission.BLUETOOTH_CONNECT
-            )
+            arrayOf(Manifest.permission.BLUETOOTH_CONNECT)
         } else {
             emptyArray()
         }
     }
 
-    fun allGranted(context: Context): Boolean {
+    fun optionalPermissions(): Array<String> {
+        return if (SDK_INT >= VERSION_CODES.TIRAMISU) {
+            arrayOf(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            emptyArray()
+        }
+    }
+
+    fun allRequiredGranted(context: Context): Boolean {
         return requiredPermissions().all {
             ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
         }

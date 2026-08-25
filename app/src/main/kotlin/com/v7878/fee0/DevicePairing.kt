@@ -1,6 +1,7 @@
 package com.v7878.fee0
 
 import android.app.Activity
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.companion.AssociationInfo
@@ -17,7 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts.StartIntentSend
 
 class DevicePairing(
     private val activity: ComponentActivity,
-    private val onDevicePaired: (ScanResult) -> Unit,
+    private val onDevicePaired: (BluetoothDevice) -> Unit,
     private val onPairingFailed: (String?) -> Unit
 ) {
     private val intentSenderLauncher = activity.registerForActivityResult(
@@ -53,9 +54,9 @@ class DevicePairing(
 
                     override fun onAssociationCreated(associationInfo: AssociationInfo) {
                         if (SDK_INT >= VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                            val scanResult = associationInfo.associatedDevice?.bleDevice
-                            if (scanResult != null) {
-                                onDevicePaired.invoke(scanResult)
+                            val device = associationInfo.associatedDevice?.bleDevice?.device
+                            if (device != null) {
+                                onDevicePaired.invoke(device)
                             }
                         }
                     }
@@ -103,9 +104,10 @@ class DevicePairing(
             } else {
                 data?.getParcelableExtra(CompanionDeviceManager.EXTRA_DEVICE)
             }
+            val device = scanResult?.device
 
-            if (scanResult != null) {
-                onDevicePaired.invoke(scanResult)
+            if (device != null) {
+                onDevicePaired.invoke(device)
             }
         }
     }

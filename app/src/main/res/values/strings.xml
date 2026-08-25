@@ -5,10 +5,10 @@
     <string name="disconnect">Отключиться</string>
     <string name="device_not_selected">Не выбрано</string>
 
-    <string name="mode_selection">ВЫБОР РЕЖИМА</string>
+    <string name="mode_selection">Выьор режима</string>
 
-    <string name="total_mileage">ОБЩИЙ ПРОБЕГ</string>
-    <string name="single_mileage">ПОЕЗДКА</string>
+    <string name="total_mileage">Пробег</string>
+    <string name="single_mileage">Поездка</string>
 
     <string name="mileage_placeholder">--</string>
     <string name="single_mileage_km">%1$.2f км</string>
@@ -17,13 +17,17 @@
     <string name="temp_placeholder">-- °C</string>
     <string name="temp_celsius">%1$d °C</string>
 
-    <string name="controller">КОНТРОЛЛЕР</string>
-    <string name="motor">МОТОР</string>
-    <string name="battery">БАТАРЕЯ</string>
+    <string name="controller">Контроллер</string>
+    <string name="motor">Мотор</string>
+    <string name="battery">Батарея</string>
 
     <string name="rpm">RPM</string>
-    <string name="speed">СКОРОСТЬ</string>
+    <string name="speed">Скорость</string>
 
     <string name="speed_placeholder">--.-</string>
     <string name="speedometer">%1$.1f</string>
+
+    <string name="notification_channel">Самокат</string>
+    <string name="notification_title">Самокат</string>
+    <string name="notification_message">Поддержание соединения</string>
 </resources>
