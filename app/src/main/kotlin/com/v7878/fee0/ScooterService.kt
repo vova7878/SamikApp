@@ -39,8 +39,8 @@ class ScooterService : Service() {
             this@ScooterService.demoteToBackground()
         }
 
-        fun setMode(mode: Int) {
-            TODO()
+        fun setGear(gear: Int) {
+            controller.setGear(gear)
         }
     }
 
@@ -56,7 +56,7 @@ class ScooterService : Service() {
 
         createNotificationChannel()
 
-        controller = ScooterController()
+        controller = ScooterController(this)
     }
 
     override fun onBind(intent: Intent): IBinder = binder

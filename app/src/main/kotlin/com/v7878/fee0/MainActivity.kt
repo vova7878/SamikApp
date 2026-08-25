@@ -16,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,15 +59,19 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.v7878.fee0.bluetooth.ScooterController.MODE_D
-import com.v7878.fee0.bluetooth.ScooterController.MODE_ECO
-import com.v7878.fee0.bluetooth.ScooterController.MODE_S
-import com.v7878.fee0.bluetooth.ScooterController.MODE_WALK
+import com.v7878.fee0.ConnectionState.CONNECTED
+import com.v7878.fee0.ConnectionState.CONNECTING
+import com.v7878.fee0.ConnectionState.DISCONNECTED
+import com.v7878.fee0.bluetooth.ScooterController.GEAR_D
+import com.v7878.fee0.bluetooth.ScooterController.GEAR_ECO
+import com.v7878.fee0.bluetooth.ScooterController.GEAR_S
+import com.v7878.fee0.bluetooth.ScooterController.GEAR_WALK
 import com.v7878.fee0.ui.ButtonState
 import com.v7878.fee0.ui.SimpleCard
 import com.v7878.fee0.ui.StatefulButton
 import com.v7878.fee0.ui.simpleState
 import com.v7878.fee0.ui.theme.ActivityBackground
+import com.v7878.fee0.ui.theme.BgCard
 import com.v7878.fee0.ui.theme.BgCardText
 import com.v7878.fee0.ui.theme.BtnBlue
 import com.v7878.fee0.ui.theme.BtnRed
@@ -79,7 +84,7 @@ class ScooterActions(
     val startPairing: () -> Unit,
     val connect: (device: BluetoothDevice) -> Unit,
     val disconnect: () -> Unit,
-    val setGear: (Int) -> Unit,
+    val setGear: (gear: Int) -> Unit,
 )
 
 class MainActivity : ComponentActivity() {
@@ -97,6 +102,7 @@ class MainActivity : ComponentActivity() {
             binder?.registerCallback { telemetry ->
                 scooterState = telemetry
             }
+            binder?.promoteToForeground()
             binder?.demoteToBackground()
         }
 
@@ -111,9 +117,10 @@ class MainActivity : ComponentActivity() {
 
         permissionsLauncher = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
-        ) { _ ->
+        ) {
             if (Permissions.allRequiredGranted(this)) {
                 onRequiredGranted?.invoke()
+                onRequiredGranted = null
             } else {
                 // TODO showError("Без доступа к Bluetooth приложение не может работать")
             }
@@ -135,7 +142,7 @@ class MainActivity : ComponentActivity() {
             startPairing = { pairing.startPairing() },
             connect = { device -> binder?.connect(device) },
             disconnect = { binder?.disconnect() },
-            setGear = { binder?.setMode(it) },
+            setGear = { binder?.setGear(it) },
         )
 
         setContent {
@@ -169,7 +176,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        if (scooterState.connected) {
+        if (scooterState.connection != DISCONNECTED) {
             binder?.promoteToForeground()
         }
         unbindService(serviceConnection)
@@ -245,17 +252,22 @@ enum class ConnectionButtonState(
     override val containerColor: Color,
     override val hasBorder: Boolean
 ) : ButtonState {
-    Connected(
-        containerColor = BtnRed,
-        hasBorder = false
-    ),
+
     Disconnected(
         containerColor = BtnBlue,
+        hasBorder = false
+    ),
+    Connecting(
+        containerColor = BgCard,
+        hasBorder = true
+    ),
+    Connected(
+        containerColor = BtnRed,
         hasBorder = false
     )
 }
 
-fun Modifier.disabled(disabled: Boolean): Modifier = composed {
+fun Modifier.disableWhen(disabled: Boolean): Modifier = composed {
     val progress by animateFloatAsState(
         targetValue = if (disabled) 0.6f else 1f,
         animationSpec = tween(200)
@@ -289,28 +301,28 @@ fun Main(
             .fillMaxSize()
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
-            .disabled(!hasBlePermissions),
+            .disableWhen(!hasBlePermissions),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Header(device = device, state = state, actions = actions)
         SimpleCard(
-            modifier = Modifier.disabled(!state.connected),
+            modifier = Modifier.disableWhen(state.connection != CONNECTED),
             contentPadding = PaddingValues(20.dp)
         ) {
             DashboardCard(state = state)
         }
         SimpleCard(
-            modifier = Modifier.disabled(!state.connected)
+            modifier = Modifier.disableWhen(state.connection != CONNECTED)
         ) {
             ModeSelection(state = state, actions = actions)
         }
         SimpleCard(
-            modifier = Modifier.disabled(!state.connected)
+            modifier = Modifier.disableWhen(state.connection != CONNECTED)
         ) {
             MileageBlock(state = state)
         }
         SimpleCard(
-            modifier = Modifier.disabled(!state.connected)
+            modifier = Modifier.disableWhen(state.connection != CONNECTED)
         ) {
             TemperatureBlock(state = state)
         }
@@ -334,15 +346,19 @@ fun Header(device: BluetoothDevice?, state: ScooterState, actions: ScooterAction
             },
             style = MaterialTheme.typography.headlineMedium,
             fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.clickable(
+                onClick = { actions.startPairing() }
+            )
         )
         StatefulButton(
-            state = when (state.connected) {
-                true -> ConnectionButtonState.Connected
-                false -> ConnectionButtonState.Disconnected
+            state = when (state.connection) {
+                DISCONNECTED -> ConnectionButtonState.Disconnected
+                CONNECTING -> ConnectionButtonState.Connecting
+                CONNECTED -> ConnectionButtonState.Connected
             },
             onClick = {
-                if (state.connected) {
+                if (state.connection != DISCONNECTED) {
                     actions.disconnect()
                 } else {
                     if (device == null) {
@@ -356,9 +372,10 @@ fun Header(device: BluetoothDevice?, state: ScooterState, actions: ScooterAction
                 .widthIn(min = 150.dp)
         ) {
             Text(
-                text = when (state.connected) {
-                    true -> stringResource(R.string.disconnect)
-                    false -> stringResource(R.string.connect)
+                text = when (state.connection) {
+                    DISCONNECTED -> stringResource(R.string.connect)
+                    CONNECTING -> stringResource(R.string.connecting)
+                    CONNECTED -> stringResource(R.string.disconnect)
                 }
             )
         }
@@ -473,8 +490,8 @@ fun ModeSelection(state: ScooterState, actions: ScooterActions) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             StatefulButton(
-                state = simpleState(state.gear == MODE_ECO),
-                onClick = { actions.setGear(MODE_ECO) },
+                state = simpleState(state.gear == GEAR_ECO),
+                onClick = { actions.setGear(GEAR_ECO) },
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(1f)
@@ -486,8 +503,8 @@ fun ModeSelection(state: ScooterState, actions: ScooterActions) {
                 )
             }
             StatefulButton(
-                state = simpleState(state.gear == MODE_D),
-                onClick = { actions.setGear(MODE_D) },
+                state = simpleState(state.gear == GEAR_D),
+                onClick = { actions.setGear(GEAR_D) },
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(1f)
@@ -499,8 +516,8 @@ fun ModeSelection(state: ScooterState, actions: ScooterActions) {
                 )
             }
             StatefulButton(
-                state = simpleState(state.gear == MODE_S),
-                onClick = { actions.setGear(MODE_S) },
+                state = simpleState(state.gear == GEAR_S),
+                onClick = { actions.setGear(GEAR_S) },
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(1f)
@@ -512,8 +529,8 @@ fun ModeSelection(state: ScooterState, actions: ScooterActions) {
                 )
             }
             StatefulButton(
-                state = simpleState(state.gear == MODE_WALK),
-                onClick = { actions.setGear(MODE_WALK) },
+                state = simpleState(state.gear == GEAR_WALK),
+                onClick = { actions.setGear(GEAR_WALK) },
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(1f)

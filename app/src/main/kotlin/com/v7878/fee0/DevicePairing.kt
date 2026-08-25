@@ -29,7 +29,7 @@ class DevicePairing(
 
     fun startPairing() {
         val scanFilter = ScanFilter.Builder()
-            //.setServiceUuid(ParcelUuid(ScooterManager.SERVICE_UUID))
+            //TODO? .setServiceUuid(ParcelUuid(ScooterManager.SERVICE_UUID))
             .build()
 
         val leFilter = BluetoothLeDeviceFilter.Builder()

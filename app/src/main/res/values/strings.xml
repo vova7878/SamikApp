@@ -2,6 +2,7 @@
     <string name="app_name">FEE0</string>
 
     <string name="connect">Подключиться</string>
+    <string name="connecting">Подключение...</string>
     <string name="disconnect">Отключиться</string>
     <string name="device_not_selected">Не выбрано</string>
 

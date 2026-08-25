@@ -3,9 +3,13 @@ package com.v7878.fee0
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
+enum class ConnectionState {
+    DISCONNECTED, CONNECTING, CONNECTED
+}
+
 @Parcelize
 data class ScooterState(
-    val connected: Boolean = false,
+    val connection: ConnectionState = ConnectionState.DISCONNECTED,
 
     val voltage: Float? = null,
     val current: Float? = null,
